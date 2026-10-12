@@ -7,11 +7,14 @@
 var ThreadsCore = (function () {
   "use strict";
 
-  // Build number shown in Settings. Must match the service worker cache name
-  // ("threads-v" + VERSION) so a phone that shows this number is running this code.
-  // The tests fail if the two drift apart.
-  var VERSION = 3;
-  var BUILT = "2026-10-11";
+  // Release number shown in Settings, as MAJOR.MINOR.PATCH:
+  //   MAJOR  breaking changes, such as a stored-data change that needs migration
+  //   MINOR  new features and enhancements (PATCH resets to 0)
+  //   PATCH  defect fixes only
+  // Must match the service worker cache name ("threads-v" + VERSION) so a phone that
+  // shows this number is running this code. The tests fail if the two drift apart.
+  var VERSION = "1.4.0";
+  var BUILT = "2026-10-12";
 
   // Allowance before a thread counts as behind: half a session or half an hour.
   var SLACK = 0.5;

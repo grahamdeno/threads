@@ -90,11 +90,23 @@ node --test
 
 Node 18 or later, no dependencies. Covers week boundaries (including daylight saving), pace, weekly totals and the score, plus the version and offline-cache wiring. GitHub Actions runs the same command on every push.
 
+## Versioning
+
+Releases are numbered `MAJOR.MINOR.PATCH`:
+
+| Part | When it changes | Example |
+|---|---|---|
+| Major | Breaking changes, such as a stored-data change that needs migration | 1.4.0 to 2.0.0 |
+| Minor | New features and enhancements. Patch resets to 0. | 1.4.0 to 1.5.0 |
+| Patch | Defect fixes only | 1.4.0 to 1.4.1 |
+
+Every release, patches included, gets a new version number. GitHub Actions adds the matching git tag (`v1.4.0`) automatically after the tests pass.
+
 ## Updating the live app
 
-1. Bump `VERSION` (and `BUILT`) in `core.js` and the matching `CACHE` name in `sw.js`. The tests fail if they differ.
+1. Set `VERSION` (and `BUILT`) in `core.js` and the matching `CACHE` name in `sw.js` (`threads-v1.4.0`). The tests fail if they differ or if the version is not three numbers.
 2. Run `node --test`.
-3. Push to `main`. GitHub Pages redeploys in about a minute.
+3. Push to `main`. GitHub Pages redeploys in about a minute, and once the tests pass, GitHub Actions tags the commit with the new version.
 4. On the phone, close and reopen Threads, then check the version at the bottom of Settings.
 
 ## Roadmap

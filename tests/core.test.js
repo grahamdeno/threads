@@ -18,10 +18,15 @@ const at = (y, m, d, h = 0, min = 0) => new Date(y, m - 1, d, h, min);
 const MON = 1, SUN = 0;
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, a + " is not " + b);
 
+test("version is MAJOR.MINOR.PATCH", () => {
+  assert.equal(typeof C.VERSION, "string");
+  assert.match(C.VERSION, /^\d+\.\d+\.\d+$/);
+});
+
 test("version matches the service worker cache name", () => {
-  const m = read("sw.js").match(/const CACHE = "threads-v(\d+)"/);
+  const m = read("sw.js").match(/const CACHE = "threads-v([^"]+)"/);
   assert.ok(m, "CACHE constant not found in sw.js");
-  assert.equal(Number(m[1]), C.VERSION);
+  assert.equal(m[1], C.VERSION);
 });
 
 test("core.js is loaded by the page and cached for offline use", () => {
