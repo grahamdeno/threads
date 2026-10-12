@@ -1,0 +1,4 @@
+*.csv
+*.json
+!manifest.webmanifest
+.DS_Store
