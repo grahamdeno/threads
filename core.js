@@ -10,7 +10,7 @@ var ThreadsCore = (function () {
   // Build number shown in Settings. Must match the service worker cache name
   // ("threads-v" + VERSION) so a phone that shows this number is running this code.
   // The tests fail if the two drift apart.
-  var VERSION = 2;
+  var VERSION = 3;
   var BUILT = "2026-10-11";
 
   // Allowance before a thread counts as behind: half a session or half an hour.

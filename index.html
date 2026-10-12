@@ -242,9 +242,9 @@ var SUGGESTED=[
   {name:'Morning walks',target:5,unit:'sessions'},
   {name:'Guitar',target:3,unit:'sessions'},
   {name:'Reading',target:4,unit:'sessions'},
-  {name:'CPMAI study',target:3,unit:'hours'},
-  {name:'Team D503',target:4,unit:'hours'},
-  {name:'Espresso build',target:1,unit:'sessions'}
+  {name:'Learn a language',target:2,unit:'hours'},
+  {name:'Side project',target:3,unit:'hours'},
+  {name:'Cooking something new',target:1,unit:'sessions'}
 ];
 var REASONS=[
   ['work','Work ran late','Try a weekend block for this one instead of weeknights.'],
@@ -668,7 +668,7 @@ function render(){
   if(!S) return;
   applySkin();
   if(!S.setupDone){
-    if(!ui.draft) ui.draft={threads:SUGGESTED.map(function(s){return {id:uid(),name:s.name,target:s.target,unit:s.unit};}), fixed:[{id:uid(),label:'Hockey',when:'Sun evening'}]};
+    if(!ui.draft) ui.draft={threads:SUGGESTED.map(function(s){return {id:uid(),name:s.name,target:s.target,unit:s.unit};}), fixed:[{id:uid(),label:'Family dinner',when:'Sun evening'}]};
     root.classList.remove('home');
     root.innerHTML=vSetup(); drawOverlay(); return;
   }

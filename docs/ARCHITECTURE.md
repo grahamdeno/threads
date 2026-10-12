@@ -88,7 +88,7 @@ flowchart LR
 {
   "v": 1,
   "threads": [{ "id": "…", "name": "Guitar", "target": 3, "unit": "sessions", "milestones": [{ "name": "…", "done": false }], "intent": "…" }],
-  "fixed":   [{ "id": "…", "label": "Hockey", "when": "Sun evening" }],
+  "fixed":   [{ "id": "…", "label": "Family dinner", "when": "Sun evening" }],
   "logs":    [{ "id": "…", "tid": "<thread id>", "d": "2026-10-11", "amt": 1, "ts": 1791766000000 }],
   "reviews": { "2026-10-12": { "focus": "<thread id>", "reasons": { "<thread id>": "family" }, "at": 1791766000000 } },
   "setupDone": true,
