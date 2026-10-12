@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#E9EDEC">
+<meta name="description" content="Track where your free time goes across the things you care about, against a weekly target for each.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Threads">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Threads</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Frosted glass tiles over an ambient two-color glow. Bricolage Grotesque for display numerals,
+   IBM Plex Sans for body text, IBM Plex Mono for figures. Single column, glass tab bar, bottom sheets.
+   Skins: Auto, Moss, Linen, Ink, Dusk, Weave. Each skin is one block of custom properties. */
+:root{
+  --bg:#E9EDEC; --surface:#FFFFFF; --fg:#17201E; --muted:#5F6B67; --rim:rgba(255,255,255,.75); --line:rgba(23,32,30,.10);
+  --lived:#24302D; --empty:rgba(23,32,30,.12); --accent:#2C78A0; --mark:#C2642A; --g1:#9CD3E6; --g2:#E8C9A6;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* aliases the app script uses */
+  --display:var(--f-display); --ink:var(--fg); --warn-ink:var(--mark);
+  --row:color-mix(in srgb, var(--surface) 72%, var(--bg));
+  /* type, follows the phone's text size */
+  --t-xs:.6875rem; --t-sm:.8125rem; --t-md:.9375rem; --t-lg:1.0625rem; --t-xl:1.375rem; --t-2xl:2rem; --t-num:3rem;
+  /* space and shape */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px;
+  --r-tile:26px; --r-chip:20px; --r-btn:14px; --r-field:12px; --r-pill:999px;
+  --hit:2.75rem; --spring:cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0C1110; --surface:#1A2120; --fg:#E8EEEB; --muted:#8E9A96; --rim:rgba(255,255,255,.10); --line:rgba(255,255,255,.08);
+  --lived:#CFD9D5; --empty:rgba(255,255,255,.09); --accent:#6CC0E4; --mark:#F0A062; --g1:#1E5468; --g2:#5A3A22; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0C1110; --surface:#1A2120; --fg:#E8EEEB; --muted:#8E9A96; --rim:rgba(255,255,255,.10); --line:rgba(255,255,255,.08);
+  --lived:#CFD9D5; --empty:rgba(255,255,255,.09); --accent:#6CC0E4; --mark:#F0A062; --g1:#1E5468; --g2:#5A3A22; color-scheme:dark }
+/* fixed skins, placed last so they win over the system theme */
+:root[data-skin="moss"] { --bg:#111A14; --surface:#1E2A22; --fg:#E6ECDF; --muted:#94A291; --rim:rgba(255,255,255,.10); --line:rgba(255,255,255,.08); --lived:#BCCDA8; --empty:rgba(255,255,255,.08); --accent:#E8C55C; --mark:#E68B5E; --g1:#2F5A35; --g2:#6A5A1E; color-scheme:dark }
+:root[data-skin="linen"]{ --bg:#EFE8DD; --surface:#FFFBF5; --fg:#2A251F; --muted:#786D61; --rim:rgba(255,255,255,.8); --line:rgba(42,37,31,.10); --lived:#3B342C; --empty:rgba(42,37,31,.12); --accent:#2F6B57; --mark:#B0482F; --g1:#E9C9A0; --g2:#B9D2C2; color-scheme:light }
+:root[data-skin="ink"]  { --bg:#0A0F1E; --surface:#161E36; --fg:#E5EAF6; --muted:#8893AF; --rim:rgba(255,255,255,.10); --line:rgba(255,255,255,.08); --lived:#B3C3EC; --empty:rgba(255,255,255,.08); --accent:#F3BC5E; --mark:#FF808C; --g1:#25317A; --g2:#5B2A5E; color-scheme:dark }
+:root[data-skin="dusk"] { --bg:#1A121D; --surface:#2A1E2F; --fg:#F2E8F0; --muted:#A592A3; --rim:rgba(255,255,255,.10); --line:rgba(255,255,255,.08); --lived:#E4C0DA; --empty:rgba(255,255,255,.08); --accent:#7FD6C5; --mark:#F5A95C; --g1:#5A2650; --g2:#1F5150; color-scheme:dark }
+:root[data-skin="weave"]{ --bg:#0E1820; --surface:#1A2A35; --fg:#E8ECEE; --muted:#9AA8B0; --rim:rgba(255,255,255,.10); --line:rgba(255,255,255,.08); --lived:#9FD3CB; --empty:rgba(255,255,255,.08); --accent:#D9A441; --mark:#F08A6C; --g1:#1F3B4A; --g2:#4A3A1A; color-scheme:dark }
+
+html{font-size:100%; min-height:100%; padding-top:env(safe-area-inset-top,0px)}
+@supports (font: -apple-system-body){ html{font:-apple-system-body} }
+body{margin:0; min-height:100%; background:var(--bg); color:var(--fg); font-family:var(--f-body); font-size:var(--t-md); line-height:1.4; -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+button,input,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ambient glow */
+.glow{position:fixed; inset:-20%; z-index:0; pointer-events:none;
+  background:radial-gradient(40% 35% at 18% 12%, var(--g1), transparent 70%), radial-gradient(45% 40% at 92% 78%, var(--g2), transparent 70%);
+  filter:blur(30px); opacity:.9}
+@media (prefers-reduced-motion: no-preference){ .glow{animation:drift 24s ease-in-out infinite alternate} }
+@keyframes drift{ to{ transform:translate3d(4%,-3%,0) scale(1.05) } }
+
+/* frosted glass tile */
+.card,.panel,.nextup,.pace{position:relative; background:color-mix(in srgb, var(--surface) 58%, transparent);
+  -webkit-backdrop-filter:blur(22px) saturate(170%); backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid var(--rim); border-radius:var(--r-tile); box-shadow:0 1px 0 var(--rim) inset, 0 10px 30px -18px rgba(0,0,0,.35)}
+
+.app{position:relative; z-index:1; max-width:32.5rem; margin:0 auto; padding-inline:14px; padding-block:var(--s-3) 7rem; display:flex; flex-direction:column; gap:10px}
+h1{font-family:var(--f-display); font-weight:800; font-size:var(--t-2xl); letter-spacing:-0.035em; margin:0; line-height:1; text-wrap:balance}
+h2{font-size:var(--t-md); font-weight:600; margin:0}
+.eyebrow{font-size:var(--t-xs); font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.sub{font-size:var(--t-sm); color:var(--muted)}
+.head .sub{font-family:var(--f-mono); font-size:.75rem}
+.num{font-family:var(--f-display); font-weight:800; letter-spacing:-0.04em; font-variant-numeric:tabular-nums}
+.ok{color:var(--fg)} .behind{color:var(--mark)}
+.card{padding:14px 16px; display:flex; flex-direction:column; gap:var(--s-3)}
+.card.list{padding:4px 0; gap:0; overflow:hidden; background:var(--row)}
+.card.list > .empty{padding-inline:var(--s-4)}
+.panel{padding:14px 16px; display:flex; flex-direction:column; gap:var(--s-2)}
+.panel .row2{display:flex; justify-content:space-between; gap:var(--s-3)}
+.panel .row2 span:last-child{color:var(--muted); text-align:right}
+.panel .big{font-family:var(--f-display); font-weight:800; font-size:var(--t-xl); letter-spacing:-0.02em; line-height:1.15}
+.head{display:flex; justify-content:space-between; align-items:flex-end; gap:var(--s-3)}
+
+/* home: next up tile */
+.app.home{padding-bottom:calc(3.75rem + var(--s-4))}
+.nextup{padding:14px 16px 10px; display:flex; flex-direction:column; gap:var(--s-2)}
+.nextup.focus{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset, 0 10px 30px -18px rgba(0,0,0,.35)}
+.nu-top{display:flex; justify-content:space-between; align-items:center; gap:var(--s-2)}
+.nu-top .link{min-height:2.25rem; padding:0; font-size:var(--t-sm)}
+.nu-name{font-family:var(--f-display); font-weight:800; font-size:2.75rem; letter-spacing:-0.045em; line-height:.95; background:none; border:0; padding:0; text-align:left; text-wrap:balance;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.nu-stat{display:flex; gap:var(--s-3); align-items:baseline; flex-wrap:wrap}
+.nu-stat .num{font-family:var(--f-mono); font-weight:500; letter-spacing:0; font-size:var(--t-lg)}
+.nu-actions{display:grid; grid-template-columns:2fr 1fr; gap:var(--s-2); padding-top:var(--s-1)}
+.nu-actions .btn{min-height:3.25rem}
+
+/* home: pace tile, one tap opens the full list */
+.pace{padding:12px 14px 10px; display:flex; flex-direction:column; gap:var(--s-2); text-align:left; width:100%; color:var(--fg)}
+.pace:active{transform:scale(.99)}
+.pace .line{display:flex}
+.cols{position:relative; height:8.5rem; display:grid; gap:6px; align-items:end}
+.app.home .cols{height:clamp(5rem, 20vh, 8.5rem)}
+.col{height:100%; background:var(--empty); border-radius:8px; display:flex; align-items:flex-end; overflow:hidden}
+.col.sel{box-shadow:0 0 0 2px var(--accent), 0 0 14px var(--accent)}
+.col>i{display:block; width:100%; border-radius:8px; background:var(--lived); transition:height .7s var(--spring)}
+.col>i.w{background:var(--mark)}
+.paceline{position:absolute; left:-4px; right:-4px; border-top:1.5px dashed var(--muted); z-index:1; pointer-events:none}
+.labels{display:grid; gap:6px; text-align:center}
+.labels span{font-family:var(--f-mono); font-size:.6875rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.fixedline{display:flex; align-items:center; gap:var(--s-2); font-size:var(--t-sm); color:var(--muted); padding:0 var(--s-1)}
+.fixedline b{color:var(--fg); font-weight:600}
+
+/* list rows, swipe right to log */
+.trow{position:relative; border-bottom:1px solid var(--line); touch-action:pan-y; user-select:none; -webkit-user-select:none}
+.trow:last-child{border-bottom:0}
+.reveal{position:absolute; inset:0; display:flex; align-items:center; padding-left:var(--s-5); background:color-mix(in srgb, var(--accent) 18%, var(--row)); color:var(--fg); font-family:var(--f-mono); font-weight:500; font-size:var(--t-sm); opacity:0}
+.slide{position:relative; background:var(--row); display:flex; align-items:center; gap:var(--s-3); padding:var(--s-3) var(--s-4); will-change:transform}
+.slide.spring{transition:transform .45s var(--spring)}
+.focusrow{background:color-mix(in srgb, var(--accent) 10%, var(--row))}
+.tmain{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:6px}
+.tline{display:flex; justify-content:space-between; gap:var(--s-2); align-items:baseline}
+.tname{font-size:var(--t-lg); font-weight:600; background:none; border:0; padding:0; text-align:left; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.count{font-family:var(--f-mono); font-size:var(--t-sm); font-weight:500; white-space:nowrap; font-variant-numeric:tabular-nums}
+.bar{height:6px; border-radius:3px; background:var(--empty); overflow:hidden}
+.bar>i{display:block; height:100%; border-radius:3px; background:var(--lived); transition:width .7s var(--spring)}
+.bar.w>i{background:var(--mark)}
+.pbar{position:relative}
+.tick{position:absolute; top:-3px; bottom:-3px; width:2px; border-radius:1px; background:var(--accent); pointer-events:none}
+.tickkey{display:inline-block; width:2px; height:12px; background:var(--accent); vertical-align:-2px; margin-right:4px}
+.next{font-size:var(--t-xs); color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.plus{flex:0 0 auto; width:var(--hit); height:var(--hit); border-radius:50%; border:0; background:var(--empty); color:var(--fg); display:flex; align-items:center; justify-content:center}
+.plus:active{transform:scale(.92)}
+.hint{font-size:var(--t-xs); color:var(--muted); text-align:center; font-family:var(--f-mono)}
+
+/* controls */
+.btn{min-height:3rem; border-radius:var(--r-btn); border:0; background:var(--fg); color:var(--bg); font-weight:600; font-size:var(--t-md); padding:0 var(--s-4)}
+.btn:disabled{opacity:.4; cursor:default}
+.btn.ghost{background:transparent; color:var(--fg); border:1px dashed var(--line); font-weight:500; color:var(--muted)}
+.btn.quiet{background:var(--empty); color:var(--fg)}
+.btn.danger{background:var(--mark); color:var(--bg)}
+.link{background:none; border:0; color:var(--accent); font-weight:600; font-size:var(--t-sm); padding:var(--s-2) 0; min-height:var(--hit); text-align:left}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{min-height:var(--hit); padding:0 var(--s-4); border-radius:var(--r-pill); border:0; background:var(--empty); color:var(--muted); font-size:var(--t-sm); font-weight:600}
+.chip[aria-pressed="true"]{background:var(--surface); color:var(--fg); box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.field{min-height:var(--hit); padding:0 var(--s-3); border:1px solid transparent; border-radius:var(--r-field); background:var(--empty); font-family:var(--f-body); font-size:1rem; width:100%; min-width:0; color:var(--fg)}
+textarea.field{padding:10px var(--s-3); min-height:5.5rem; resize:vertical; line-height:1.4}
+#bk-in,#bk-out{font-family:var(--f-mono); font-size:.75rem}
+.srow{display:flex; flex-direction:column; gap:var(--s-2); padding:var(--s-3) var(--s-4); border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.line{display:flex; gap:var(--s-2); align-items:center; justify-content:space-between}
+.stepper{display:flex; align-items:center; gap:var(--s-1)}
+.stepper button{width:var(--hit); height:var(--hit); border-radius:50%; border:0; background:var(--empty); font-size:1.25rem; line-height:1}
+.stepper output{min-width:var(--hit); text-align:center; font-family:var(--f-mono); font-size:var(--t-lg); font-weight:500; font-variant-numeric:tabular-nums}
+.unit{min-height:var(--hit); padding:0 var(--s-4); border-radius:var(--r-pill); border:0; background:var(--empty); color:var(--fg); font-weight:600; font-size:var(--t-sm)}
+.x{flex:0 0 auto; width:var(--hit); height:var(--hit); border:0; border-radius:50%; background:transparent; color:var(--muted); display:flex; align-items:center; justify-content:center}
+.hbar{display:grid; grid-template-columns:minmax(0,7.5rem) minmax(0,1fr) 3.6rem; align-items:center; gap:var(--s-2); font-size:var(--t-sm)}
+.hbar .bar{height:8px; border-radius:4px} .hbar .bar>i{border-radius:4px}
+.hbar span:first-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.hbar span:last-child{text-align:right; font-family:var(--f-mono); font-weight:500; font-variant-numeric:tabular-nums}
+.ms{display:flex; align-items:center; gap:var(--s-2)}
+.dot{flex:0 0 auto; width:var(--hit); height:var(--hit); border:0; background:none; display:flex; align-items:center; justify-content:center; padding:0}
+.dot i{width:24px; height:24px; border-radius:7px; border:1.5px solid var(--empty); background:var(--empty); display:flex; align-items:center; justify-content:center; color:var(--bg)}
+.dot.done i{background:var(--lived); border-color:var(--lived)}
+.dot.now i{background:transparent; border:2px solid var(--accent); box-shadow:0 0 10px var(--accent)}
+.ms .mt{flex:1 1 auto; min-width:0; display:flex; flex-direction:column}
+.ms .mt b{font-weight:500} .ms.now .mt b{font-weight:600}
+.ms.done .mt b{color:var(--muted); text-decoration:line-through}
+.logrow{display:flex; justify-content:space-between; align-items:center; gap:var(--s-2); font-size:var(--t-sm); border-bottom:1px solid var(--line)}
+.logrow:last-child{border-bottom:0}
+.empty{font-size:var(--t-sm); color:var(--muted); padding:var(--s-2) 0}
+.note{font-size:var(--t-xs); color:var(--muted); text-align:center}
+.confirm{display:flex; flex-direction:column; gap:var(--s-2); background:var(--empty); border:1px solid var(--mark); border-radius:16px; padding:var(--s-3)}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+/* theme picker */
+.skins{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px}
+/* header icon button (settings) */
+.iconbtn{flex:0 0 auto; width:var(--hit); height:var(--hit); border-radius:50%; border:0; background:var(--empty); color:var(--fg); display:flex; align-items:center; justify-content:center}
+/* thread detail: one square per day of the current week */
+.days{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; text-align:center}
+.days div{display:flex; flex-direction:column; align-items:center; gap:4px; font-family:var(--f-mono); font-size:.6875rem; color:var(--muted)}
+.days i{width:2rem; height:2rem; border-radius:9px; background:var(--empty); display:flex; align-items:center; justify-content:center; font-style:normal; font-size:.6875rem; color:var(--bg); font-weight:500}
+.days .on i{background:var(--lived)}
+.days .today i{box-shadow:0 0 0 2px var(--accent) inset; background:transparent; color:var(--fg)}
+.days .today.on i{background:var(--lived); box-shadow:0 0 0 2px var(--accent); color:var(--bg)}
+.days .later i{opacity:.45}
+.grid2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s-2)}
+.setrow{display:flex; justify-content:space-between; align-items:center; gap:var(--s-3); padding:var(--s-2) var(--s-4); min-height:3.25rem; border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:0}
+.skin{border:1px solid var(--line); background:transparent; border-radius:14px; padding:8px 2px; display:grid; gap:6px; justify-items:center; font-size:.6875rem; font-weight:500; min-height:var(--hit)}
+.skin[aria-pressed="true"]{border-color:var(--fg); box-shadow:inset 0 0 0 1px var(--fg)}
+.sw{width:28px; height:28px; border-radius:50%; overflow:hidden; display:grid; grid-template-columns:1fr 1fr}
+.sw i:first-child{grid-row:span 2}
+
+/* glass tab bar */
+nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:5; background:color-mix(in srgb, var(--surface) 58%, transparent); -webkit-backdrop-filter:blur(22px) saturate(170%); backdrop-filter:blur(22px) saturate(170%); border-top:1px solid var(--rim); padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs div{max-width:32.5rem; margin:0 auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr))}
+nav.tabs button{min-height:3.75rem; border:0; background:none; font-size:var(--t-xs); font-weight:600; color:var(--muted); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px}
+nav.tabs button svg{width:22px; height:22px}
+nav.tabs button[aria-current="page"]{color:var(--fg)}
+nav.tabs button[aria-current="page"] svg{color:var(--accent)}
+
+/* bottom sheet */
+.sheet-wrap{position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:10; display:flex; align-items:flex-end; justify-content:center; animation:fade .2s ease}
+.sheet{width:100%; max-width:32.5rem; background:color-mix(in srgb, var(--surface) 86%, transparent); -webkit-backdrop-filter:blur(22px) saturate(170%); backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid var(--rim); border-bottom:0; border-radius:28px 28px 0 0; padding:var(--s-2) 18px calc(var(--s-5) + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:14px; animation:rise .28s cubic-bezier(.2,.8,.2,1); touch-action:none}
+.sheet.spring{transition:transform .4s var(--spring)}
+.grab{align-self:stretch; display:flex; justify-content:center; padding:var(--s-2) 0 var(--s-1); border:0; background:none; min-height:var(--hit); cursor:grab}
+.grab i{width:38px; height:5px; border-radius:3px; background:var(--line)}
+.sheet h2{font-family:var(--f-display); font-weight:800; font-size:1.375rem; letter-spacing:-0.02em}
+.sheet .sub{font-family:var(--f-mono); font-size:.75rem}
+.amt{flex:1 1 40%; min-height:3.5rem; border-radius:var(--r-chip); border:1px solid var(--rim); background:var(--empty); font-family:var(--f-display); font-size:var(--t-xl); font-weight:800; letter-spacing:-0.03em}
+.amt:active{transform:scale(.97)}
+@keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+.toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(4.75rem + env(safe-area-inset-bottom,0px)); background:var(--fg); color:var(--bg); border-radius:var(--r-btn); padding:6px 6px 6px var(--s-4); display:flex; align-items:center; gap:var(--s-2); z-index:20; max-width:calc(100% - 32px); font-size:var(--t-sm); font-weight:600; animation:pop .35s var(--spring)}
+.toast button{min-height:2.5rem; border:0; background:none; color:var(--bg); font-weight:700; text-decoration:underline; padding:0 var(--s-3)}
+@keyframes pop{from{transform:translate(-50%,12px); opacity:0}to{transform:translate(-50%,0); opacity:1}}
+
+@media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none!important; transition:none!important} }
+</style>
+
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+<div id="root" class="app" aria-live="polite"><div class="card"><h2>Opening Threads…</h2><div class="sub">Your threads, targets, and logs load here.</div></div></div>
+<div id="overlay"></div>
+
+<script>
+(function(){
+'use strict';
+var KEY='threads-app-v1';
+var VERSION='1.0';
+var SUGGESTED=[
+  {name:'Morning walks',target:5,unit:'sessions'},
+  {name:'Guitar',target:3,unit:'sessions'},
+  {name:'Reading',target:4,unit:'sessions'},
+  {name:'CPMAI study',target:3,unit:'hours'},
+  {name:'Team D503',target:4,unit:'hours'},
+  {name:'Espresso build',target:1,unit:'sessions'}
+];
+var REASONS=[
+  ['work','Work ran late','Try a weekend block for this one instead of weeknights.'],
+  ['family','Family came first','That is the plan working. No change needed.'],
+  ['big','Target too big','Consider lowering the target by one for next week.'],
+  ['interest','Lost interest','Decide whether this thread stays active or gets parked.']
+];
+var REDUCED=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- state ---------- */
+var S=null;
+var ui={tab:'week', weekList:false, skip:0, detail:null, settings:false, setupStep:1, draft:null, sheet:null, toast:null, confirm:null, reviewFocus:null, reviewReasons:{}};
+var prevWidth={};   // last drawn bar widths, so bars spring from where they were
+var prevRing=null;
+
+function blank(){return {v:1, threads:[], fixed:[], logs:[], reviews:{}, setupDone:false, skin:'auto', weekStartsOn:1};}
+var SKIN_LIST=[
+  {id:'auto',name:'Auto',sw:['#E9EDEC','#24302D','#2C78A0']},
+  {id:'moss',name:'Moss',sw:['#111A14','#BCCDA8','#E8C55C']},
+  {id:'linen',name:'Linen',sw:['#EFE8DD','#3B342C','#2F6B57']},
+  {id:'ink',name:'Ink',sw:['#0A0F1E','#B3C3EC','#F3BC5E']},
+  {id:'dusk',name:'Dusk',sw:['#1A121D','#E4C0DA','#7FD6C5']},
+  {id:'weave',name:'Weave',sw:['#0E1820','#9FD3CB','#D9A441']}
+];
+function applySkin(){
+  var s=S&&S.skin, de=document.documentElement;
+  if(s && s!=='auto') de.setAttribute('data-skin',s); else de.removeAttribute('data-skin');
+  try{ var m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', getComputedStyle(de).getPropertyValue('--bg').trim()); }catch(e){}
+}
+function vTheme(){
+  var cur=(S.skin||'auto');
+  return '<div class="eyebrow" style="margin-top:var(--s-2)">Theme</div><section class="card"><div class="skins" role="group" aria-label="Theme">'+
+    SKIN_LIST.map(function(k){return '<button class="skin" data-act="skin" data-skin="'+k.id+'" aria-pressed="'+(cur===k.id)+'"><span class="sw" aria-hidden="true">'+k.sw.map(function(c){return '<i style="background:'+c+'"></i>';}).join('')+'</span>'+k.name+'</button>';}).join('')+
+    '</div></section>';
+}
+function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function normalize(d){
+  var s=blank(); if(!d||typeof d!=='object') return s;
+  s.threads=Array.isArray(d.threads)?d.threads:[]; s.fixed=Array.isArray(d.fixed)?d.fixed:[];
+  s.logs=Array.isArray(d.logs)?d.logs:[]; s.reviews=(d.reviews&&typeof d.reviews==='object')?d.reviews:{};
+  s.setupDone=!!d.setupDone;
+  s.skin=(typeof d.skin==='string' && /^(auto|moss|linen|ink|dusk|weave)$/.test(d.skin))?d.skin:'auto';
+  s.weekStartsOn=d.weekStartsOn===0?0:1;
+  s.threads.forEach(function(t){ if(!Array.isArray(t.milestones)) t.milestones=[]; if(typeof t.intent!=='string') t.intent=''; });
+  return s;
+}
+function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||10); }catch(e){} }
+
+/* ---------- dates ---------- */
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function parse(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+/* weekStartsOn is 1 for Monday, 0 for Sunday */
+function wso(){ return S && S.weekStartsOn===0 ? 0 : 1; }
+function weekStart(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()-wso()+7)%7)); return x;}
+function addDays(d,n){var x=new Date(d); x.setDate(x.getDate()+n); return x;}
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function short(d){return MON[d.getMonth()]+' '+d.getDate();}
+function dayIdx(){return (new Date().getDay()-wso()+7)%7;}
+
+/* ---------- derived ---------- */
+function unit(t){return t.unit==='hours'?'hours':'sessions';}
+function weekDone(t,ws){
+  var a=ymd(ws), b=ymd(addDays(ws,6)), sum=0;
+  S.logs.forEach(function(l){ if(l.tid===t.id && l.d>=a && l.d<=b) sum+=Number(l.amt)||0; });
+  return Math.round(sum*100)/100;
+}
+function fmtH(n){ return (Math.round(n*10)/10)+'h'; }
+function countText(t,done){ return unit(t)==='hours' ? fmtH(done)+' / '+t.target+'h' : done+' / '+t.target; }
+function onTrack(t,done){ var expected=t.target*((dayIdx()+1)/7); return done>=t.target || done>=expected-0.5; }
+function nextMs(t){ for(var i=0;i<t.milestones.length;i++) if(!t.milestones[i].done) return t.milestones[i]; return null; }
+function thread(id){ for(var i=0;i<S.threads.length;i++) if(S.threads[i].id===id) return S.threads[i]; return null; }
+function quickAmt(t){ return unit(t)==='hours'?0.5:1; }
+
+/* ---------- persistence ---------- */
+/* Everything lives in localStorage on the device. No account, no server. */
+var saveWarned=false;
+function readLocal(){ try{ var v=localStorage.getItem(KEY); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); saveWarned=false; }
+  catch(e){ if(!saveWarned){ saveWarned=true; toast('Could not save on this device. Back up from Settings.'); } }
+}
+function pruneLogs(){ var cutoff=ymd(addDays(new Date(),-400)); S.logs=S.logs.filter(function(l){return l.d>=cutoff;}); }
+
+/* ---------- toast ---------- */
+var toastTimer=null;
+function toast(msg,undo){ ui.toast={msg:msg,undo:undo||null}; drawOverlay(); clearTimeout(toastTimer); toastTimer=setTimeout(function(){ ui.toast=null; drawOverlay(); }, undo?6000:3000); }
+
+/* ---------- icons ---------- */
+var ICON_PLUS='<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>';
+var ICON_X='<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l10 10M14 4L4 14"/></svg>';
+var ICON_CHECK='<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5l2.5 2.5L11 4.5"/></svg>';
+var ICON_CHEV='<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 4l5 5-5 5"/></svg>';
+var ICON_GEAR='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>';
+var TAB_ICONS={
+  week:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5H12z" fill="currentColor" stroke="none" opacity=".9"/></svg>',
+  review:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 19V12M10 19V6M15 19v-9M20 19V9"/></svg>',
+  threads:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>'
+};
+
+/* ---------- views ---------- */
+function bar(key,pct,warn){
+  var from=prevWidth.hasOwnProperty(key)?prevWidth[key]:0;
+  prevWidth[key]=pct;
+  return '<div class="bar'+(warn?' w':'')+'" role="img" aria-label="'+pct+'% of weekly target"><i data-to="'+pct+'" style="width:'+(REDUCED?pct:from)+'%"></i></div>';
+}
+
+function vSetup(){
+  var d=ui.draft;
+  if(ui.setupStep===1){
+    var rows=d.threads.map(function(t){
+      return '<div class="srow"><div class="line"><label class="sr" for="sn-'+t.id+'">Thread name</label>'+
+        '<input class="field" id="sn-'+t.id+'" data-bind="draft-name" data-id="'+t.id+'" value="'+esc(t.name)+'" placeholder="Thread name" style="font-weight:600">'+
+        '<button class="x" data-act="draft-remove" data-id="'+t.id+'" aria-label="Remove '+esc(t.name||'thread')+'">'+ICON_X+'</button></div>'+
+        '<div class="line"><div class="stepper"><button data-act="draft-step" data-id="'+t.id+'" data-delta="-1" aria-label="Lower target">−</button><output>'+t.target+'</output><button data-act="draft-step" data-id="'+t.id+'" data-delta="1" aria-label="Raise target">+</button></div>'+
+        '<button class="unit" data-act="draft-unit" data-id="'+t.id+'">'+(t.unit==='hours'?'Hours':'Sessions')+' a week</button></div></div>';
+    }).join('');
+    var hrs=0,ses=0; d.threads.forEach(function(t){ if(t.unit==='hours') hrs+=t.target; else ses+=t.target; });
+    return '<div class="eyebrow">Step 1 of 2</div><h1>Where should your free time go?</h1>'+
+      '<div class="sub">Name each thread and set a weekly target. These are suggestions; edit, remove, or add your own. Start low. You can raise targets later.</div>'+
+      '<section class="card list" aria-label="Threads">'+(rows||'<div class="empty">No threads yet. Add your first one below.</div>')+'</section>'+
+      '<button class="btn ghost" data-act="draft-add">+ Add a thread</button>'+
+      '<div class="note">'+d.threads.length+' threads · '+ses+' sessions and '+hrs+' hours a week</div>'+
+      '<button class="btn" data-act="setup-next"'+(d.threads.length?'':' disabled')+'>Continue</button>'+
+      (ui.confirm==='restore'?'<section class="card">'+vRestore()+'</section>':'<button class="link" data-act="restore-open">Have a backup? Restore it</button>');
+  }
+  var frows=d.fixed.map(function(f){
+    return '<div class="srow"><div class="line"><label class="sr" for="fl-'+f.id+'">Commitment</label><input class="field" id="fl-'+f.id+'" data-bind="draft-flabel" data-id="'+f.id+'" value="'+esc(f.label)+'" placeholder="What">'+
+      '<button class="x" data-act="draft-fremove" data-id="'+f.id+'" aria-label="Remove commitment">'+ICON_X+'</button></div>'+
+      '<label class="sr" for="fw-'+f.id+'">When</label><input class="field" id="fw-'+f.id+'" data-bind="draft-fwhen" data-id="'+f.id+'" value="'+esc(f.when)+'" placeholder="When, e.g. Sun evening"></div>';
+  }).join('');
+  return '<div class="eyebrow">Step 2 of 2</div><h1>What gets placed first?</h1>'+
+    '<div class="sub">Recurring commitments your threads plan around: games, meets, family nights. They show at the top of every week.</div>'+
+    '<section class="card list" aria-label="Placed first">'+(frows||'<div class="empty">Nothing yet. You can add these later.</div>')+'</section>'+
+    '<button class="btn ghost" data-act="draft-fadd">+ Add a commitment</button>'+
+    '<button class="btn" data-act="setup-finish">Start my first week</button>'+
+    '<button class="link" data-act="setup-back">← Back to threads</button>';
+}
+
+function weekModel(){
+  var now=new Date(), ws=weekStart(now), frac=(dayIdx()+1)/7, sum=0, ok=0;
+  var plan=S.reviews[ymd(ws)], focusId=plan&&plan.focus?plan.focus:null;
+  var items=S.threads.map(function(t){
+    var done=weekDone(t,ws), r=Math.min(1,done/t.target), good=onTrack(t,done);
+    sum+=r; if(good) ok++;
+    return {t:t, done:done, r:r, good:good, deficit:t.target*frac-done, focus:t.id===focusId};
+  });
+  return {now:now, ws:ws, frac:frac, items:items, ok:ok, focusId:focusId, score:items.length?Math.round(sum/items.length*100):0};
+}
+function partOfDay(d){ var h=d.getHours(); return h<12?'morning':h<17?'afternoon':'evening'; }
+
+/* Home: Next up card plus pace chart */
+function vWeek(){
+  if(ui.weekList) return vWeekList();
+  var M=weekModel();
+  if(!M.items.length) return '<header><h1>This week</h1></header><section class="card"><h2>No threads yet</h2><div class="sub">Add one under Threads.</div></section>';
+  var behind=M.items.filter(function(x){return !x.good;}).sort(function(a,b){return (b.focus?1:0)-(a.focus?1:0) || (b.deficit/b.t.target)-(a.deficit/a.t.target);});
+  var open=M.items.filter(function(x){return x.done<x.t.target;}).sort(function(a,b){return (b.focus?1:0)-(a.focus?1:0) || a.r-b.r;});
+  var pool=behind.length?behind:open;
+  var scoreColor=M.score>=Math.round(M.frac*80)?'ok':'behind';
+  var head='<header class="head"><div><div class="sub" style="font-weight:600">'+DAY[M.now.getDay()]+' '+partOfDay(M.now)+' · Day '+(dayIdx()+1)+' of 7</div><h1>This week</h1></div>'+
+    '<div style="text-align:right"><div class="num '+scoreColor+'" style="font-size:var(--t-num);line-height:.9">'+M.score+'</div><div class="eyebrow">Week score</div></div></header>';
+  var hero;
+  if(!pool.length){
+    hero='<section class="nextup" aria-label="Next up"><div class="eyebrow">Next up</div><div class="nu-name">Week complete</div><div class="sub">Every thread hit its target. Anything else this week is extra.</div></section>';
+  } else {
+    var n=pool[ui.skip%pool.length], t=n.t, m=nextMs(t);
+    var gap=n.good?(n.done>=t.target?'Target hit':'On pace'):(unit(t)==='hours'?fmtH(Math.max(0,n.deficit)):Math.ceil(n.deficit))+' behind where you should be';
+    hero='<section class="nextup'+(n.focus?' focus':'')+'" aria-label="Next up">'+
+      '<div class="nu-top"><span class="eyebrow">Next up'+(n.focus?' · <span style="color:var(--accent)">Focus</span>':'')+'</span>'+
+      '<button class="link" data-act="log" data-id="'+t.id+'">Other amount</button></div>'+
+      '<button class="nu-name" data-act="open" data-id="'+t.id+'">'+esc(t.name)+'</button>'+
+      '<div class="nu-stat"><span class="num '+(n.good?'ok':'behind')+'">'+(unit(t)==='hours'?fmtH(n.done):n.done)+' of '+t.target+(unit(t)==='hours'?'h':'')+'</span><span class="sub">'+gap+'</span></div>'+
+      '<div class="sub milestone" style="color:var(--ink);opacity:.8">'+(m?'Next: '+esc(m.name):'No milestone yet. Tap the name to add one.')+'</div>'+
+      '<div class="nu-actions"><button class="btn" data-act="quick" data-id="'+t.id+'">Log '+(unit(t)==='hours'?'30 min':'1 session')+'</button>'+
+      '<button class="btn quiet" data-act="skip"'+(pool.length>1?'':' disabled')+'>Not now</button></div></section>';
+    var nextId=t.id;
+  }
+  var cols=M.items.map(function(x){
+    var key='c-'+x.t.id, h=Math.max(4,Math.round(x.r*100)), from=prevWidth.hasOwnProperty(key)?prevWidth[key]:0; prevWidth[key]=h;
+    return '<span class="col'+(x.t.id===nextId?' sel':'')+'"><i class="'+(x.good?'':'w')+'" data-h="'+h+'" style="height:'+(REDUCED?h:from)+'%"></i></span>';
+  }).join('');
+  var labels=M.items.map(function(x){return '<span>'+esc(x.t.name.split(' ')[0])+'</span>';}).join('');
+  var chart='<button class="pace" data-act="week-list" aria-label="Pace by thread, '+M.ok+' of '+M.items.length+' on pace. Open all threads.">'+
+    '<span class="line"><span class="eyebrow">Pace · tap for all threads</span><span class="sub">'+M.ok+' of '+M.items.length+' on pace</span></span>'+
+    '<span class="cols" style="grid-template-columns:repeat('+M.items.length+',minmax(0,1fr))"><span class="paceline" style="bottom:'+Math.round(M.frac*100)+'%"></span>'+cols+'</span>'+
+    '<span class="labels" style="grid-template-columns:repeat('+M.items.length+',minmax(0,1fr))">'+labels+'</span></button>';
+  var fixed=S.fixed.length?'<div class="fixedline"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span>Placed first: <b>'+S.fixed.map(function(f){return esc(f.label)+(f.when?', '+esc(f.when):'');}).join(' · ')+'</b></span></div>':'';
+  return head+hero+chart+fixed;
+}
+
+/* Detail: every thread, behind first, with pace markers */
+function vWeekList(){
+  var M=weekModel();
+  var items=M.items.slice().sort(function(a,b){return (b.focus?1:0)-(a.focus?1:0) || (a.good===b.good?a.r-b.r:(a.good?1:-1));});
+  var rows=items.map(function(x){
+    var t=x.t, pct=Math.round(x.r*100), m=nextMs(t);
+    return '<div class="trow" data-swipe="'+t.id+'"><div class="reveal" aria-hidden="true">+ '+(unit(t)==='hours'?'30 min':'1 session')+'</div><div class="slide'+(x.focus?' focusrow':'')+'">'+
+      '<div class="tmain"><div class="tline"><button class="tname" data-act="open" data-id="'+t.id+'">'+esc(t.name)+'</button>'+
+      '<span class="count '+(x.good?'ok':'behind')+'">'+countText(t,x.done)+'</span></div>'+
+      '<div class="pbar">'+bar('w-'+t.id,pct,!x.good)+'<span class="tick" style="left:'+Math.round(M.frac*100)+'%" aria-hidden="true"></span></div>'+
+      (x.focus?'<div class="next" style="color:var(--accent);font-weight:600">Focus'+(m?' · Next: '+esc(m.name):'')+'</div>':'')+'</div>'+
+      '<button class="plus" data-act="log" data-id="'+t.id+'" aria-label="Log '+esc(t.name)+'">'+ICON_PLUS+'</button></div></div>';
+  }).join('');
+  return '<button class="link" data-act="week-home">← This week</button>'+
+    '<header class="head"><h1>All threads</h1><div class="sub" style="padding-bottom:4px">'+M.ok+' of '+M.items.length+' on pace</div></header>'+
+    '<section class="card list" aria-label="Threads">'+(rows||'<div class="empty">No threads. Add one under Threads.</div>')+'</section>'+
+    '<div class="hint"><span class="tickkey" aria-hidden="true"></span> where you should be today · swipe right to log</div>';
+}
+
+function vReview(){
+  var now=new Date(), ws=weekStart(now), nws=addDays(ws,7), nKey=ymd(nws);
+  var saved=S.reviews[nKey]||{};
+  if(ui.reviewFocus===null) ui.reviewFocus=saved.focus||null;
+  if(!Object.keys(ui.reviewReasons).length && saved.reasons) ui.reviewReasons=JSON.parse(JSON.stringify(saved.reasons));
+  var starved=[];
+  var bars=S.threads.map(function(t){
+    var done=weekDone(t,ws), r=done/t.target, low=r<0.5; if(low) starved.push(t);
+    var pct=Math.max(2,Math.min(100,Math.round(r*100)));
+    return '<div class="hbar"><span>'+esc(t.name)+'</span>'+bar('r-'+t.id,pct,low)+'<span class="'+(low?'behind':'ok')+'">'+(unit(t)==='hours'?fmtH(done):done)+'/'+t.target+'</span></div>';
+  }).join('');
+  var starvedHtml=starved.slice(0,3).map(function(t){
+    var pick=ui.reviewReasons[t.id];
+    var chips=REASONS.map(function(r){return '<button class="chip" data-act="reason" data-id="'+t.id+'" data-r="'+r[0]+'" aria-pressed="'+(pick===r[0])+'">'+r[1]+'</button>';}).join('');
+    var tip=''; REASONS.forEach(function(r){ if(r[0]===pick) tip=r[2]; });
+    return '<section class="card"><h2>'+esc(t.name)+' was short this week. Why?</h2><div class="chips" role="group" aria-label="Reason">'+chips+'</div>'+(tip?'<div class="sub">'+tip+'</div>':'')+'</section>';
+  }).join('');
+  var fchips=S.threads.map(function(t){return '<button class="chip" data-act="focus" data-id="'+t.id+'" aria-pressed="'+(ui.reviewFocus===t.id)+'">'+esc(t.name)+'</button>';}).join('');
+  var ft=ui.reviewFocus?thread(ui.reviewFocus):null, fm=ft?nextMs(ft):null;
+  var timing=dayIdx()<5?'<div class="sub">Best done at the end of the week. You can review now and redo it later.</div>':'';
+  return '<header><div class="eyebrow">'+short(ws)+' to '+short(addDays(ws,6))+'</div><h1>Week review</h1></header>'+timing+
+    '<section class="card" aria-label="Where the time went"><h2>Where the time went</h2>'+(bars||'<div class="empty">No threads yet.</div>')+
+    '<div class="sub" style="font-size:var(--t-xs)">Amber means under half of the weekly target.</div></section>'+
+    (starvedHtml||(S.threads.length?'<section class="card"><h2>Nothing was starved this week.</h2></section>':''))+
+    '<section class="card" aria-label="Next week focus"><h2>Next week\'s one focus</h2><div class="sub">Everything else keeps its normal target. This one gets protected time.</div><div class="chips" role="group" aria-label="Focus thread">'+fchips+'</div></section>'+
+    '<section class="panel" aria-label="Next week"><div class="eyebrow">Week of '+short(nws)+'</div><div class="big">'+(ft?'Focus: '+esc(ft.name)+(fm?'. Milestone: '+esc(fm.name)+'.':'. Add a milestone to make it concrete.'):'Pick a focus above.')+'</div>'+
+    (S.fixed.length?'<div class="sub">Placed first: '+S.fixed.map(function(f){return esc(f.label)+(f.when?' ('+esc(f.when)+')':'');}).join(' · ')+'</div>':'')+'</section>'+
+    '<button class="btn" data-act="lock"'+(ft?'':' disabled')+'>'+(saved.focus?'Update next week':'Lock in next week')+'</button>';
+}
+
+function vThreads(){
+  var list=S.threads.map(function(t){
+    var m=nextMs(t);
+    return '<div class="srow" style="flex-direction:row;align-items:center"><div class="tmain"><button class="tname" data-act="open" data-id="'+t.id+'">'+esc(t.name)+'</button><div class="next">'+t.target+' '+(unit(t)==='hours'?'hours':'sessions')+' a week'+(m?' · Next: '+esc(m.name):'')+'</div></div>'+
+      '<button class="x" data-act="open" data-id="'+t.id+'" aria-label="Open '+esc(t.name)+'">'+ICON_CHEV+'</button></div>';
+  }).join('');
+  var fixed=S.fixed.map(function(f){
+    return '<div class="srow"><div class="line"><label class="sr" for="xl-'+f.id+'">Commitment</label><input class="field" id="xl-'+f.id+'" data-bind="fixed-label" data-id="'+f.id+'" value="'+esc(f.label)+'" placeholder="What">'+
+      '<button class="x" data-act="fixed-remove" data-id="'+f.id+'" aria-label="Remove commitment">'+ICON_X+'</button></div>'+
+      '<label class="sr" for="xw-'+f.id+'">When</label><input class="field" id="xw-'+f.id+'" data-bind="fixed-when" data-id="'+f.id+'" value="'+esc(f.when)+'" placeholder="When"></div>';
+  }).join('');
+  return '<header class="head" style="align-items:center"><h1>Threads</h1><button class="iconbtn" data-act="settings" aria-label="Settings">'+ICON_GEAR+'</button></header>'+
+    '<section class="card list" aria-label="Your threads">'+(list||'<div class="empty">No threads yet.</div>')+'</section>'+
+    '<button class="btn ghost" data-act="thread-add">+ Add a thread</button>'+
+    '<div class="eyebrow" style="margin-top:var(--s-2)">Placed first</div>'+
+    '<section class="card list" aria-label="Placed first">'+(fixed||'<div class="empty">No commitments yet.</div>')+'</section>'+
+    '<button class="btn ghost" data-act="fixed-add">+ Add a commitment</button>';
+}
+
+/* ---------- settings ---------- */
+var STANDALONE=(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true;
+function storageNote(){
+  if(STANDALONE) return 'Everything stays on this phone. No account and no server. Back up to iCloud Drive before deleting the icon.';
+  return 'Saved in this browser only. Add Threads to your Home Screen from Safari, then restore a backup there.';
+}
+function vSettings(){
+  var reset=ui.confirm==='reset'?'<div class="confirm"><div style="font-weight:600">Erase all threads, logs, and reviews?</div><div class="sub">This cannot be undone.</div><div class="chips"><button class="btn danger" data-act="reset-yes">Erase everything</button><button class="btn quiet" data-act="confirm-no">Keep</button></div></div>':'<button class="link" data-act="reset" style="color:var(--warn-ink)">Start over</button>';
+  return '<button class="link" data-act="settings-close">← Threads</button><header><h1>Settings</h1></header>'+
+    vTheme()+
+    '<div class="eyebrow" style="margin-top:var(--s-2)">Your week</div>'+
+    '<section class="card list"><div class="setrow"><span>Week starts</span><div class="chips" role="group" aria-label="Week starts">'+
+      '<button class="chip" data-act="wso" data-v="1" aria-pressed="'+(wso()===1)+'">Monday</button><button class="chip" data-act="wso" data-v="0" aria-pressed="'+(wso()===0)+'">Sunday</button></div></div></section>'+
+    vBackup()+
+    '<div class="note">'+storageNote()+'</div>'+
+    '<div class="note">Version '+VERSION+' · works offline · updates when opened</div>'+reset;
+}
+
+/* ---------- backup, restore, CSV ---------- */
+function vRestore(){
+  return '<div class="confirm"><div style="font-weight:600">Restore replaces everything in the app with the backup.</div>'+
+    '<label class="btn quiet" for="bk-file" style="display:flex;align-items:center;justify-content:center">Choose backup file</label>'+
+    '<input type="file" id="bk-file" accept=".json,application/json,text/plain" class="sr">'+
+    '<label class="sr" for="bk-in">Backup text</label><textarea class="field" id="bk-in" placeholder="Or paste backup text here"></textarea>'+
+    '<div class="chips"><button class="btn danger" data-act="restore-go">Restore</button><button class="btn quiet" data-act="confirm-no">Cancel</button></div></div>';
+}
+function vBackup(){
+  return '<div class="eyebrow" style="margin-top:var(--s-2)">Your data</div>'+
+    '<section class="card"><div class="grid2">'+
+      '<button class="btn" data-act="backup">Back up</button><button class="btn quiet" data-act="restore-open">Restore</button>'+
+      '<button class="btn quiet" data-act="csv-export">Export log CSV</button>'+
+      '<label class="btn quiet" for="csv-file" style="display:flex;align-items:center;justify-content:center">Import CSV</label></div>'+
+    '<input type="file" id="csv-file" accept=".csv,text/csv,text/plain" class="sr">'+
+    '<div class="sub">Back up saves one file with your threads, logs and reviews. The CSV has one row per logged entry: date, thread, amount, unit.</div>'+
+    (ui.backupText?'<label class="eyebrow" for="bk-out">Copy all of this text and keep it somewhere safe</label><textarea class="field" id="bk-out" readonly>'+esc(ui.backupText)+'</textarea>':'')+
+    (ui.confirm==='restore'?vRestore():'')+'</section>';
+}
+function backupJson(){ return JSON.stringify({app:'threads',v:1,exported:new Date().toISOString(),data:S}); }
+function copyText(text,msg){
+  var done=function(){ ui.backupText=null; render(); toast(msg); };
+  var fail=function(){ ui.backupText=text; render(); var o=document.getElementById('bk-out'); if(o){ o.focus(); o.select(); } };
+  try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done,fail); return; } }catch(e){}
+  fail();
+}
+/* Share sheet first (Save to Files on iPhone), then a plain download, then the clipboard. */
+function saveFile(text,name,type,label){
+  try{
+    if(navigator.canShare && typeof File==='function'){
+      var f=new File([text],name,{type:type});
+      if(navigator.canShare({files:[f]})){
+        navigator.share({files:[f],title:label}).then(function(){ toast(label+' saved'); }).catch(function(e){ if(e&&e.name==='AbortError') return; copyText(text,label+' copied. Paste it into Notes or Files to keep it.'); });
+        return;
+      }
+    }
+  }catch(e){}
+  try{
+    var url=URL.createObjectURL(new Blob([text],{type:type})), a=document.createElement('a');
+    a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); },1000);
+    toast(label+' downloaded'); return;
+  }catch(e){}
+  copyText(text,label+' copied. Paste it into Notes or Files to keep it.');
+}
+function doBackup(){ saveFile(backupJson(),'threads-backup-'+ymd(new Date())+'.json','application/json','Backup'); }
+function restoreFrom(text){
+  var d=null; try{ d=JSON.parse(String(text||'').trim()); }catch(e){}
+  var data=d && d.app==='threads' && d.data ? d.data : d;
+  if(!data || !Array.isArray(data.threads)){ toast('That is not a Threads backup.'); return; }
+  S=normalize(data); ui.confirm=null; ui.draft=null; ui.backupText=null; ui.tab='week'; ui.weekList=false; ui.detail=null; ui.settings=false; prevWidth={}; prevRing=null;
+  save(); render(); window.scrollTo(0,0); toast('Restored '+S.threads.length+' threads');
+}
+function csvCell(v){ v=String(v==null?'':v); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function csvExport(){
+  var rows=[['date','thread','amount','unit']];
+  S.logs.slice().sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:(a.ts||0)-(b.ts||0);}).forEach(function(l){
+    var t=thread(l.tid); if(t) rows.push([l.d,t.name,l.amt,unit(t)]);
+  });
+  if(rows.length<2){ toast('Nothing logged yet'); return; }
+  saveFile(rows.map(function(r){return r.map(csvCell).join(',');}).join('\r\n')+'\r\n','threads-log-'+ymd(new Date())+'.csv','text/csv','Log');
+}
+/* RFC 4180 style: quoted fields, doubled quotes, commas and line breaks inside quotes. */
+function parseCsv(text){
+  var rows=[], row=[], f='', q=false, i, c;
+  text=String(text||'').replace(/^﻿/,'');
+  for(i=0;i<text.length;i++){
+    c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){ f+='"'; i++; } else q=false; } else f+=c; continue; }
+    if(c==='"') q=true;
+    else if(c===','){ row.push(f); f=''; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(f); rows.push(row); row=[]; f=''; }
+    else f+=c;
+  }
+  if(f!==''||row.length){ row.push(f); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(x){return String(x).trim();}); });
+}
+/* Adds entries; creates any thread it does not know; skips rows already in the log. */
+function csvImport(text){
+  var rows=parseCsv(text); if(!rows.length){ toast('That file is empty.'); return; }
+  var h=rows[0].map(function(x){return String(x).trim().toLowerCase();});
+  var di=h.indexOf('date'), ti=h.indexOf('thread'), ai=h.indexOf('amount'), ui_=h.indexOf('unit');
+  if(di<0||ti<0||ai<0){ toast('The CSV needs date, thread and amount columns.'); return; }
+  var have={}; S.logs.forEach(function(l){ var k=l.tid+'|'+l.d+'|'+Number(l.amt); have[k]=(have[k]||0)+1; });
+  var added=0, skipped=0, made=0, base=Date.now();
+  rows.slice(1).forEach(function(r,n){
+    var d=String(r[di]||'').trim(), name=String(r[ti]||'').trim(), amt=Number(String(r[ai]||'').trim());
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || !name || !(amt>0)){ skipped++; return; }
+    var t=null; S.threads.forEach(function(x){ if(!t && x.name.trim().toLowerCase()===name.toLowerCase()) t=x; });
+    if(!t){ t={id:uid(),name:name,target:2,unit:(ui_>=0 && /^h/i.test(String(r[ui_]).trim()))?'hours':'sessions',milestones:[],intent:''}; S.threads.push(t); made++; }
+    var k=t.id+'|'+d+'|'+amt;
+    if(have[k]){ have[k]--; skipped++; return; }
+    S.logs.push({id:uid(),tid:t.id,d:d,amt:amt,ts:base+n}); added++;
+  });
+  save(); render();
+  toast('Added '+added+' entr'+(added===1?'y':'ies')+(made?', '+made+' new thread'+(made===1?'':'s'):'')+(skipped?', skipped '+skipped:''));
+}
+
+function vDays(t,ws){
+  var today=dayIdx(), cells='';
+  for(var k=0;k<7;k++){
+    var dt=addDays(ws,k), key=ymd(dt), amt=0;
+    S.logs.forEach(function(l){ if(l.tid===t.id && l.d===key) amt+=Number(l.amt)||0; });
+    var cls=(amt?'on ':'')+(k===today?'today':(k>today?'later':''));
+    var lbl=DAY[dt.getDay()]+(amt?', '+(unit(t)==='hours'?fmtH(amt):amt+' session'+(amt==1?'':'s')):', nothing logged');
+    cells+='<div class="'+cls+'"><i role="img" aria-label="'+lbl+'">'+(amt>1&&unit(t)!=='hours'?amt:'')+'</i>'+DAY[dt.getDay()].charAt(0)+'</div>';
+  }
+  return '<div class="days">'+cells+'</div>';
+}
+function vDetail(){
+  var t=thread(ui.detail); if(!t){ ui.detail=null; return vThreads(); }
+  var ws=weekStart(new Date()), done=weekDone(t,ws), good=onTrack(t,done);
+  var firstOpen=-1; t.milestones.forEach(function(m,i){ if(firstOpen<0&&!m.done) firstOpen=i; });
+  var ms=t.milestones.map(function(m,i){
+    var st=m.done?'done':(i===firstOpen?'now':'later');
+    return '<div class="ms '+st+'"><button class="dot '+st+'" data-act="ms-toggle" data-id="'+t.id+'" data-i="'+i+'" aria-label="'+(m.done?'Mark not done: ':'Mark done: ')+esc(m.name)+'" aria-pressed="'+!!m.done+'"><i>'+(m.done?ICON_CHECK:'')+'</i></button>'+
+      '<div class="mt"><b>'+esc(m.name)+'</b><span class="sub" style="font-size:var(--t-xs)">'+(m.done?'Done'+(m.doneOn?' · '+short(parse(m.doneOn)):''):(st==='now'?'Current milestone':'Later'))+'</span></div>'+
+      '<button class="x" data-act="ms-remove" data-id="'+t.id+'" data-i="'+i+'" aria-label="Remove milestone">'+ICON_X+'</button></div>';
+  }).join('');
+  var logs=S.logs.filter(function(l){return l.tid===t.id;}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:(b.ts||0)-(a.ts||0);}).slice(0,8).map(function(l){
+    var dt=parse(l.d);
+    return '<div class="logrow"><span>'+DAY[dt.getDay()]+', '+short(dt)+'</span><span style="display:flex;align-items:center;gap:4px"><span class="sub">'+(unit(t)==='hours'?fmtH(l.amt):(l.amt+' session'+(l.amt==1?'':'s')))+'</span><button class="x" data-act="log-remove" data-id="'+l.id+'" aria-label="Delete this entry">'+ICON_X+'</button></span></div>';
+  }).join('');
+  var del=ui.confirm==='del-'+t.id?'<div class="confirm"><div style="font-weight:600">Delete '+esc(t.name)+' and its logs?</div><div class="chips"><button class="btn danger" data-act="thread-delete" data-id="'+t.id+'">Delete</button><button class="btn quiet" data-act="confirm-no">Keep</button></div></div>':'<button class="link" data-act="thread-delete-ask" data-id="'+t.id+'" style="color:var(--warn-ink)">Delete this thread</button>';
+  return '<button class="link" data-act="back">← Threads</button>'+
+    '<label class="sr" for="dn">Thread name</label><input class="field" id="dn" data-bind="t-name" data-id="'+t.id+'" value="'+esc(t.name)+'" style="font-family:var(--display);font-size:var(--t-2xl);font-weight:800;letter-spacing:-0.035em;min-height:3.5rem;background:transparent;border-color:transparent;padding-inline:0">'+
+    '<section class="card"><div class="line"><div class="eyebrow">This week</div><span class="count '+(good?'ok':'behind')+'">'+countText(t,done)+'</span></div>'+vDays(t,ws)+
+    '<div class="sub">Weekly target</div><div class="line"><div class="stepper"><button data-act="t-step" data-id="'+t.id+'" data-delta="-1" aria-label="Lower target">−</button><output>'+t.target+'</output><button data-act="t-step" data-id="'+t.id+'" data-delta="1" aria-label="Raise target">+</button></div>'+
+    '<button class="unit" data-act="t-unit" data-id="'+t.id+'">'+(unit(t)==='hours'?'Hours':'Sessions')+' a week</button></div></section>'+
+    '<section class="card"><div class="eyebrow">This season · milestones</div>'+(ms||'<div class="empty">Add the next small, concrete step.</div>')+
+    '<div class="line"><label class="sr" for="msn">New milestone</label><input class="field" id="msn" placeholder="Next milestone"><button class="unit" data-act="ms-add" data-id="'+t.id+'">Add</button></div></section>'+
+    '<section class="panel"><label class="eyebrow" for="intent">This year · what I want to be true</label><textarea class="field" id="intent" data-bind="t-intent" data-id="'+t.id+'" placeholder="In your words">'+esc(t.intent)+'</textarea></section>'+
+    '<section class="card"><div class="eyebrow">Recent</div>'+(logs||'<div class="empty">No entries yet. Log one from the Week tab.</div>')+'</section>'+del;
+}
+
+function vNav(){
+  var tabs=[['week','Week'],['review','Review'],['threads','Threads']];
+  return '<nav class="tabs" aria-label="Main"><div>'+tabs.map(function(t){return '<button data-act="tab" data-tab="'+t[0]+'"'+(ui.tab===t[0]?' aria-current="page"':'')+'>'+TAB_ICONS[t[0]]+'<span>'+t[1]+'</span></button>';}).join('')+'</div></nav>';
+}
+
+/* ---------- render ---------- */
+var root=document.getElementById('root'), overlay=document.getElementById('overlay');
+function render(){
+  if(!S) return;
+  applySkin();
+  if(!S.setupDone){
+    if(!ui.draft) ui.draft={threads:SUGGESTED.map(function(s){return {id:uid(),name:s.name,target:s.target,unit:s.unit};}), fixed:[{id:uid(),label:'Hockey',when:'Sun evening'}]};
+    root.classList.remove('home');
+    root.innerHTML=vSetup(); drawOverlay(); return;
+  }
+  var home = ui.tab==='week' && !ui.weekList;
+  root.classList.toggle('home', home);
+  var body = ui.tab==='week'?vWeek(): ui.tab==='review'?vReview(): (ui.settings?vSettings():ui.detail?vDetail():vThreads());
+  root.innerHTML=body+vNav(); drawOverlay();
+  if(!REDUCED){
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      root.querySelectorAll('.bar>i[data-to]').forEach(function(i){ i.style.width=i.getAttribute('data-to')+'%'; });
+      root.querySelectorAll('.col>i[data-h]').forEach(function(i){ i.style.height=i.getAttribute('data-h')+'%'; });
+      var rv=document.getElementById('ringval'); if(rv) rv.setAttribute('stroke-dashoffset', rv.getAttribute('data-to'));
+    }); });
+  }
+}
+function drawOverlay(){
+  var h='';
+  if(ui.sheet){
+    var t=thread(ui.sheet);
+    if(t){
+      var opts=unit(t)==='hours'?[[0.5,'30 min'],[1,'1 hr'],[1.5,'1.5 hr'],[2,'2 hr']]:[[1,'1 session'],[2,'2 sessions']];
+      h+='<div class="sheet-wrap" data-act="sheet-close"><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" data-stop="1">'+
+        '<button class="grab" data-act="sheet-close" aria-label="Close"><i></i></button>'+
+        '<div class="line"><h2 id="sh-t">Log '+esc(t.name)+'</h2><span class="sub">Today, '+short(new Date())+'</span></div>'+
+        '<div class="chips">'+opts.map(function(o){return '<button class="amt" data-act="log-save" data-id="'+t.id+'" data-amt="'+o[0]+'">'+o[1]+'</button>';}).join('')+'</div></div></div>';
+    }
+  }
+  if(ui.toast){ h+='<div class="toast" role="status"><span>'+esc(ui.toast.msg)+'</span>'+(ui.toast.undo?'<button data-act="undo">Undo</button>':'')+'</div>'; }
+  overlay.innerHTML=h;
+}
+
+/* ---------- actions ---------- */
+function logEntry(tid,amt){
+  var entry={id:uid(),tid:tid,d:ymd(new Date()),amt:amt,ts:Date.now()};
+  S.logs.push(entry); pruneLogs(); save(); buzz(12);
+  var t=thread(tid);
+  toast('Logged '+(t?t.name+' · '+(unit(t)==='hours'?fmtH(amt):amt+(amt==1?' session':' sessions')):''),entry.id);
+}
+function act(a,el){
+  var id=el.getAttribute('data-id'), d=ui.draft, t, i;
+  switch(a){
+    case 'skin': S.skin=el.getAttribute('data-skin')||'auto'; save(); render(); return;
+    case 'settings': ui.settings=true; ui.detail=null; ui.confirm=null; render(); window.scrollTo(0,0); return;
+    case 'settings-close': ui.settings=false; ui.confirm=null; ui.backupText=null; render(); window.scrollTo(0,0); return;
+    case 'wso': S.weekStartsOn=Number(el.getAttribute('data-v'))===0?0:1; save(); prevWidth={}; render(); return;
+    case 'csv-export': csvExport(); return;
+    case 'backup': doBackup(); return;
+    case 'restore-open': ui.confirm='restore'; ui.backupText=null; render(); var bi=document.getElementById('bk-in'); if(bi) bi.focus(); return;
+    case 'restore-go': var ta=document.getElementById('bk-in'); restoreFrom(ta?ta.value:''); return;
+    case 'week-list': ui.weekList=true; buzz(6); render(); window.scrollTo(0,0); return;
+    case 'week-home': ui.weekList=false; render(); window.scrollTo(0,0); return;
+    case 'quick': t=thread(id); if(t){ logEntry(id,quickAmt(t)); ui.skip=0; render(); } return;
+    case 'skip': ui.skip++; buzz(6); render(); return;
+    case 'tab': ui.tab=el.getAttribute('data-tab'); ui.detail=null; ui.settings=false; ui.backupText=null; ui.weekList=false; ui.skip=0; ui.confirm=null; if(ui.tab==='review'){ui.reviewFocus=null; ui.reviewReasons={};} buzz(6); render(); window.scrollTo(0,0); return;
+    case 'draft-add': d.threads.push({id:uid(),name:'',target:2,unit:'sessions'}); render(); focusLast('[data-bind="draft-name"]'); return;
+    case 'draft-remove': d.threads=d.threads.filter(function(x){return x.id!==id;}); render(); return;
+    case 'draft-step': d.threads.forEach(function(x){ if(x.id===id) x.target=Math.max(1,Math.min(30,x.target+Number(el.getAttribute('data-delta')))); }); buzz(6); render(); return;
+    case 'draft-unit': d.threads.forEach(function(x){ if(x.id===id) x.unit=x.unit==='hours'?'sessions':'hours'; }); render(); return;
+    case 'setup-next': d.threads=d.threads.filter(function(x){return x.name.trim();}); if(!d.threads.length){ render(); return; } ui.setupStep=2; render(); window.scrollTo(0,0); return;
+    case 'setup-back': ui.setupStep=1; render(); return;
+    case 'draft-fadd': d.fixed.push({id:uid(),label:'',when:''}); render(); focusLast('[data-bind="draft-flabel"]'); return;
+    case 'draft-fremove': d.fixed=d.fixed.filter(function(f){return f.id!==id;}); render(); return;
+    case 'setup-finish':
+      S.threads=d.threads.filter(function(x){return x.name.trim();}).map(function(x){return {id:x.id,name:x.name.trim(),target:x.target,unit:x.unit,milestones:[],intent:''};});
+      S.fixed=d.fixed.filter(function(f){return f.label.trim();}).map(function(f){return {id:f.id,label:f.label.trim(),when:f.when.trim()};});
+      S.setupDone=true; ui.draft=null; ui.tab='week'; save(); render(); window.scrollTo(0,0); toast('Set. Swipe a thread right whenever you put time in.'); return;
+    case 'log': ui.sheet=id; drawOverlay(); var b=overlay.querySelector('.amt'); if(b) b.focus(); return;
+    case 'sheet-close': closeSheet(); return;
+    case 'log-save': ui.sheet=null; logEntry(id,Number(el.getAttribute('data-amt'))); render(); return;
+    case 'undo': var u=ui.toast&&ui.toast.undo; S.logs=S.logs.filter(function(l){return l.id!==u;}); ui.toast=null; save(); render(); return;
+    case 'open': ui.tab='threads'; ui.detail=id; ui.confirm=null; render(); window.scrollTo(0,0); return;
+    case 'back': ui.detail=null; ui.confirm=null; render(); return;
+    case 't-step': t=thread(id); if(t){ t.target=Math.max(1,Math.min(30,t.target+Number(el.getAttribute('data-delta')))); buzz(6); save(); render(); } return;
+    case 't-unit': t=thread(id); if(t){ t.unit=unit(t)==='hours'?'sessions':'hours'; save(); render(); } return;
+    case 'ms-add': t=thread(id); var inp=document.getElementById('msn'); if(t&&inp&&inp.value.trim()){ t.milestones.push({name:inp.value.trim(),done:false}); save(); render(); var n=document.getElementById('msn'); if(n) n.focus(); } return;
+    case 'ms-toggle': t=thread(id); i=Number(el.getAttribute('data-i')); if(t&&t.milestones[i]){ var m=t.milestones[i]; m.done=!m.done; m.doneOn=m.done?ymd(new Date()):null; if(m.done) buzz(20); save(); render(); } return;
+    case 'ms-remove': t=thread(id); i=Number(el.getAttribute('data-i')); if(t){ t.milestones.splice(i,1); save(); render(); } return;
+    case 'log-remove': S.logs=S.logs.filter(function(l){return l.id!==id;}); save(); render(); return;
+    case 'thread-add': var nt={id:uid(),name:'New thread',target:2,unit:'sessions',milestones:[],intent:''}; S.threads.push(nt); save(); ui.detail=nt.id; render(); var dn=document.getElementById('dn'); if(dn){dn.focus(); dn.select();} return;
+    case 'thread-delete-ask': ui.confirm='del-'+id; render(); return;
+    case 'thread-delete': S.threads=S.threads.filter(function(x){return x.id!==id;}); S.logs=S.logs.filter(function(l){return l.tid!==id;}); ui.detail=null; ui.confirm=null; save(); render(); toast('Thread deleted'); return;
+    case 'fixed-add': S.fixed.push({id:uid(),label:'',when:''}); save(); render(); focusLast('[data-bind="fixed-label"]'); return;
+    case 'fixed-remove': S.fixed=S.fixed.filter(function(f){return f.id!==id;}); save(); render(); return;
+    case 'reset': ui.confirm='reset'; render(); return;
+    case 'reset-yes': S=blank(); ui.confirm=null; ui.setupStep=1; ui.draft=null; prevWidth={}; prevRing=null; save(); render(); window.scrollTo(0,0); return;
+    case 'confirm-no': ui.confirm=null; render(); return;
+    case 'reason': ui.reviewReasons[id]=el.getAttribute('data-r'); render(); return;
+    case 'focus': ui.reviewFocus=id; buzz(6); render(); return;
+    case 'lock':
+      if(!ui.reviewFocus) return;
+      var key=ymd(addDays(weekStart(new Date()),7));
+      S.reviews[key]={focus:ui.reviewFocus,reasons:JSON.parse(JSON.stringify(ui.reviewReasons)),at:Date.now()};
+      var keys=Object.keys(S.reviews).sort(); while(keys.length>60){ delete S.reviews[keys.shift()]; }
+      buzz(20); save(); render(); toast('Next week is set'); return;
+  }
+}
+function focusLast(sel){ var els=root.querySelectorAll(sel); if(els.length) els[els.length-1].focus(); }
+function closeSheet(){
+  var sh=document.getElementById('sheet');
+  if(sh && !REDUCED){ sh.classList.add('spring'); sh.style.transform='translateY(110%)'; setTimeout(function(){ ui.sheet=null; drawOverlay(); },220); }
+  else { ui.sheet=null; drawOverlay(); }
+}
+
+/* ---------- gestures: swipe a row right to log; drag the sheet down to close ---------- */
+var drag=null, swallowClick=false;
+document.addEventListener('pointerdown',function(e){
+  if(e.button!==0 && e.pointerType==='mouse') return;
+  var sh=e.target.closest('#sheet');
+  if(sh){ if(e.target.closest('.amt')) return; drag={kind:'sheet', el:sh, y0:e.clientY, dy:0}; sh.classList.remove('spring'); return; }
+  var row=e.target.closest('.trow[data-swipe]');
+  if(row && !e.target.closest('.plus')){ drag={kind:'row', row:row, slide:row.querySelector('.slide'), reveal:row.querySelector('.reveal'), x0:e.clientX, y0:e.clientY, dx:0, active:false}; drag.slide.classList.remove('spring'); }
+},{passive:true});
+document.addEventListener('pointermove',function(e){
+  if(!drag) return;
+  if(drag.kind==='sheet'){ drag.dy=Math.max(0,e.clientY-drag.y0); drag.el.style.transform='translateY('+drag.dy+'px)'; return; }
+  var dx=e.clientX-drag.x0, dy=e.clientY-drag.y0;
+  if(!drag.active){ if(Math.abs(dy)>10 && Math.abs(dy)>Math.abs(dx)){ drag=null; return; } if(dx>10 && Math.abs(dx)>Math.abs(dy)) drag.active=true; else return; }
+  drag.dx=Math.max(0,Math.min(dx,160));
+  var resist=drag.dx>90?90+(drag.dx-90)*0.35:drag.dx;
+  drag.slide.style.transform='translateX('+resist+'px)';
+  drag.reveal.style.opacity=Math.min(1,resist/80);
+  if(!drag.armed && resist>=80){ drag.armed=true; buzz(8); } else if(drag.armed && resist<80){ drag.armed=false; }
+},{passive:true});
+function endDrag(){
+  if(!drag) return;
+  var g=drag; drag=null;
+  if(g.kind==='sheet'){ if(g.dy>90) closeSheet(); else { g.el.classList.add('spring'); g.el.style.transform=''; } return; }
+  if(!g.active) return;
+  swallowClick=true; setTimeout(function(){ swallowClick=false; },50);
+  g.slide.classList.add('spring'); g.slide.style.transform='translateX(0)'; g.reveal.style.opacity=0;
+  if(g.armed){ var tid=g.row.getAttribute('data-swipe'), t=thread(tid); if(t){ logEntry(tid,quickAmt(t)); setTimeout(render,380); } }
+}
+document.addEventListener('pointerup',endDrag);
+document.addEventListener('pointercancel',function(){ if(drag&&drag.kind==='row'&&drag.slide){ drag.slide.classList.add('spring'); drag.slide.style.transform='translateX(0)'; drag.reveal.style.opacity=0; } else if(drag&&drag.kind==='sheet'){ drag.el.classList.add('spring'); drag.el.style.transform=''; } drag=null; });
+
+document.addEventListener('click',function(e){
+  if(swallowClick){ swallowClick=false; e.preventDefault(); return; }
+  var el=e.target.closest('[data-act]'); if(!el) return;
+  var a=el.getAttribute('data-act');
+  if(a==='sheet-close' && el.classList.contains('sheet-wrap') && e.target.closest('[data-stop]')) return;
+  if(el.disabled) return;
+  act(a,el);
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape' && ui.sheet){ closeSheet(); }
+  if(e.key==='Enter' && e.target && e.target.id==='msn'){ e.preventDefault(); var b=root.querySelector('[data-act="ms-add"]'); if(b) act('ms-add',b); }
+});
+document.addEventListener('change',function(e){
+  var el=e.target; if(!el || (el.id!=='bk-file' && el.id!=='csv-file') || !el.files || !el.files[0]) return;
+  var r=new FileReader();
+  if(el.id==='csv-file'){
+    r.onload=function(){ csvImport(String(r.result||'')); el.value=''; };
+    r.onerror=function(){ toast('Could not read that file.'); };
+    r.readAsText(el.files[0]); return;
+  }
+  r.onload=function(){ var ta=document.getElementById('bk-in'); if(ta){ ta.value=String(r.result||''); } toast('Backup loaded. Tap Restore to apply it.'); };
+  r.onerror=function(){ toast('Could not read that file.'); };
+  r.readAsText(el.files[0]);
+});
+document.addEventListener('input',function(e){
+  var el=e.target, b=el.getAttribute&&el.getAttribute('data-bind'); if(!b) return;
+  var id=el.getAttribute('data-id'), v=el.value, d=ui.draft, t;
+  if(b==='draft-name'){ d.threads.forEach(function(x){ if(x.id===id) x.name=v; }); return; }
+  if(b==='draft-flabel'){ d.fixed.forEach(function(f){ if(f.id===id) f.label=v; }); return; }
+  if(b==='draft-fwhen'){ d.fixed.forEach(function(f){ if(f.id===id) f.when=v; }); return; }
+  if(b==='t-name'){ t=thread(id); if(t){ t.name=v; save(); } return; }
+  if(b==='t-intent'){ t=thread(id); if(t){ t.intent=v; save(); } return; }
+  if(b==='fixed-label'){ S.fixed.forEach(function(f){ if(f.id===id) f.label=v; }); save(); return; }
+  if(b==='fixed-when'){ S.fixed.forEach(function(f){ if(f.id===id) f.when=v; }); save(); return; }
+});
+
+/* ---------- boot ---------- */
+S=normalize(readLocal()); render();
+
+/* Offline support. The worker is network first, so a push shows up the next time the app opens. */
+if('serviceWorker' in navigator && location.protocol!=='file:'){
+  window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+})();
+</script>
+
+</body></html>
