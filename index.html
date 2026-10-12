@@ -232,11 +232,12 @@ nav.tabs button[aria-current="page"] svg{color:var(--accent)}
 <div id="root" class="app" aria-live="polite"><div class="card"><h2>Opening Threads…</h2><div class="sub">Your threads, targets, and logs load here.</div></div></div>
 <div id="overlay"></div>
 
+<script src="core.js"></script>
 <script>
 (function(){
 'use strict';
 var KEY='threads-app-v1';
-var VERSION='1.0';
+var C=ThreadsCore;
 var SUGGESTED=[
   {name:'Morning walks',target:5,unit:'sessions'},
   {name:'Guitar',target:3,unit:'sessions'},
@@ -294,27 +295,24 @@ function normalize(d){
 function buzz(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||10); }catch(e){} }
 
 /* ---------- dates ---------- */
-function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function parse(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+/* Date, pace and score math lives in core.js so it can be tested. These wrappers
+   supply the user's week start day and the current time. */
+var ymd=C.ymd, parse=C.parse, addDays=C.addDays;
 /* weekStartsOn is 1 for Monday, 0 for Sunday */
 function wso(){ return S && S.weekStartsOn===0 ? 0 : 1; }
-function weekStart(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()-wso()+7)%7)); return x;}
-function addDays(d,n){var x=new Date(d); x.setDate(x.getDate()+n); return x;}
+function weekStart(d){ return C.weekStart(d, wso()); }
 var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var DAY=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function short(d){return MON[d.getMonth()]+' '+d.getDate();}
-function dayIdx(){return (new Date().getDay()-wso()+7)%7;}
+function dayIdx(){ return C.dayIdx(new Date(), wso()); }
+function weekFrac(){ return C.weekFrac(new Date(), wso()); }
 
 /* ---------- derived ---------- */
 function unit(t){return t.unit==='hours'?'hours':'sessions';}
-function weekDone(t,ws){
-  var a=ymd(ws), b=ymd(addDays(ws,6)), sum=0;
-  S.logs.forEach(function(l){ if(l.tid===t.id && l.d>=a && l.d<=b) sum+=Number(l.amt)||0; });
-  return Math.round(sum*100)/100;
-}
+function weekDone(t,ws){ return C.weekDone(S.logs, t.id, ws); }
 function fmtH(n){ return (Math.round(n*10)/10)+'h'; }
 function countText(t,done){ return unit(t)==='hours' ? fmtH(done)+' / '+t.target+'h' : done+' / '+t.target; }
-function onTrack(t,done){ var expected=t.target*((dayIdx()+1)/7); return done>=t.target || done>=expected-0.5; }
+function onTrack(t,done){ return C.onTrack(t.target, done, weekFrac()); }
 function nextMs(t){ for(var i=0;i<t.milestones.length;i++) if(!t.milestones[i].done) return t.milestones[i]; return null; }
 function thread(id){ for(var i=0;i<S.threads.length;i++) if(S.threads[i].id===id) return S.threads[i]; return null; }
 function quickAmt(t){ return unit(t)==='hours'?0.5:1; }
@@ -327,7 +325,8 @@ function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(S)); saveWarned=false; }
   catch(e){ if(!saveWarned){ saveWarned=true; toast('Could not save on this device. Back up from Settings.'); } }
 }
-function pruneLogs(){ var cutoff=ymd(addDays(new Date(),-400)); S.logs=S.logs.filter(function(l){return l.d>=cutoff;}); }
+/* Logs are kept indefinitely. Each entry is about 70 bytes, so years of daily logging
+   stay well inside localStorage limits, and history stays available for comparison. */
 
 /* ---------- toast ---------- */
 var toastTimer=null;
@@ -385,14 +384,14 @@ function vSetup(){
 }
 
 function weekModel(){
-  var now=new Date(), ws=weekStart(now), frac=(dayIdx()+1)/7, sum=0, ok=0;
+  var now=new Date(), ws=weekStart(now), frac=C.weekFrac(now, wso()), ok=0;
   var plan=S.reviews[ymd(ws)], focusId=plan&&plan.focus?plan.focus:null;
   var items=S.threads.map(function(t){
-    var done=weekDone(t,ws), r=Math.min(1,done/t.target), good=onTrack(t,done);
-    sum+=r; if(good) ok++;
-    return {t:t, done:done, r:r, good:good, deficit:t.target*frac-done, focus:t.id===focusId};
+    var done=weekDone(t,ws), r=Math.min(1,done/t.target), good=C.onTrack(t.target, done, frac);
+    if(good) ok++;
+    return {t:t, done:done, r:r, good:good, deficit:C.expected(t.target,frac)-done, focus:t.id===focusId};
   });
-  return {now:now, ws:ws, frac:frac, items:items, ok:ok, focusId:focusId, score:items.length?Math.round(sum/items.length*100):0};
+  return {now:now, ws:ws, frac:frac, items:items, ok:ok, focusId:focusId, score:C.score(items.map(function(x){ return {done:x.done, target:x.t.target}; }))};
 }
 function partOfDay(d){ var h=d.getHours(); return h<12?'morning':h<17?'afternoon':'evening'; }
 
@@ -519,7 +518,8 @@ function vSettings(){
       '<button class="chip" data-act="wso" data-v="1" aria-pressed="'+(wso()===1)+'">Monday</button><button class="chip" data-act="wso" data-v="0" aria-pressed="'+(wso()===0)+'">Sunday</button></div></div></section>'+
     vBackup()+
     '<div class="note">'+storageNote()+'</div>'+
-    '<div class="note">Version '+VERSION+' · works offline · updates when opened</div>'+reset;
+    '<div class="note">Version '+C.VERSION+' · built '+short(parse(C.BUILT))+' · works offline · updates when opened</div>'+
+    '<div class="note">After an update, close and reopen Threads. If this number has not changed, the phone is still running the previous version.</div>'+reset;
 }
 
 /* ---------- backup, restore, CSV ---------- */
@@ -703,7 +703,7 @@ function drawOverlay(){
 /* ---------- actions ---------- */
 function logEntry(tid,amt){
   var entry={id:uid(),tid:tid,d:ymd(new Date()),amt:amt,ts:Date.now()};
-  S.logs.push(entry); pruneLogs(); save(); buzz(12);
+  S.logs.push(entry); save(); buzz(12);
   var t=thread(tid);
   toast('Logged '+(t?t.name+' · '+(unit(t)==='hours'?fmtH(amt):amt+(amt==1?' session':' sessions')):''),entry.id);
 }
